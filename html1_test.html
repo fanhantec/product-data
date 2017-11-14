@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <!-- 引入样式 -->
+    <link href="https://cdn.bootcss.com/element-ui/2.0.0-alpha.2/theme-chalk/index.css" rel="stylesheet">
+    <style>
+        .el-form-item {
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <p align="center">
+        <label>TaskID:&nbsp;&nbsp;&nbsp;</label>
+        <input type="text" size="40" id="Taskid" name="Taskid" value="{<{.Taskid}>}" readonly>
+        <br/>
+        <label>Num:&nbsp;&nbsp;&nbsp;</label>
+        <input type="text" size="40" id="Num" name="Num" value="{<{.Num}>}" readonly>
+        <br/><br/>
+    </p>
+    <br/>
+    <div id="app">
+        <el-container>
+            <el-main>
+                <el-row>
+                    <el-col :span="14">
+                        <div class="pdf">
+                            <embed class="pdf" v-bind:src="product.product_url" width="100%" height="1000">
+                        </div>
+                    </el-col>
+                    <el-col :span="10">
+                        <el-form ref="form" :model="form" label-width="160px">
+                            <el-form-item label="sku">
+                                <el-input v-model="product.sku" placeholder="请输入"></el-input>
+                            </el-form-item>
+                            <el-form-item label="group">
+                                <el-input v-model="product.group" placeholder="请输入"></el-input>
+                            </el-form-item>
+                            <el-form-item label="production_name">
+                                <el-input v-model="product.production_name" placeholder="请输入"></el-input>
+                            </el-form-item>
+                            <el-form-item label="category_code" required>
+                                <el-select v-model="product.category_option_1" placeholder="请选择">
+                                    <el-option
+                                        v-for="item in category_options_1"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+										<span style="float: left">{{ item.label }}({{ item.value }})</span>
+                                    </el-option>
+                                </el-select>
+                                <el-select v-model="product.category_code" multiple placeholder="请选择">
+                                    <el-option
+                                        v-for="item in category_options_2[product.category_option_1]"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+										<span style="float: left">{{ item.label }}({{ item.value }})</span>
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="room_code" required>
+                                <el-select v-model="product.room_code" multiple placeholder="请选择">
+                                    <el-option
+                                        v-for="item in room_options"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+										<span style="float: left">{{ item.label }}({{ item.value }})</span>
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="color_code" required>
+                                <el-select v-model="product.color_code" multiple placeholder="请选择">
+                                    <el-option
+                                        v-for="item in color_options"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+										<span style="float: left">{{ item.label }}({{ item.value }})</span>
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="style_code" required>
+                                <el-select v-model="product.style_code" multiple placeholder="请选择">
+                                    <el-option
+                                        v-for="item in style_options"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+										<span style="float: left">{{ item.label }}({{ item.value }})</span>
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="material_code" required>
+                                <el-select v-model="product.material_code" multiple placeholder="请选择">
+                                    <el-option
+                                        v-for="item in material_options"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+										<span style="float: left">{{ item.label }}({{ item.value }})</span>
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="material">
+                                <el-input v-model="product.material" placeholder="请输入"></el-input>
+                            </el-form-item>
+                            <el-form-item label="size">
+                                <el-input v-model="product.size" placeholder="请输入"></el-input>
+                            </el-form-item>
+                            <el-form-item label="sizeName">
+                                <el-input v-model="product.sizeName" placeholder="请输入"></el-input>
+                            </el-form-item>
+                            <el-form-item label="volume">
+                                <el-input v-model="product.volume" placeholder="请输入"></el-input>
+                            </el-form-item>
+                            <el-form-item label="weight">
+                                <el-input v-model="product.weight" placeholder="请输入"></el-input>
+                            </el-form-item>
+                            <el-form-item label="description">
+                                <el-input type="textarea" :rows="4" v-model="product.description" placeholder="请输入"></el-input>
+                            </el-form-item>
+                            <el-form-item label="brand_name" v-show="false">
+                                <el-input v-model="product.brand_name" placeholder="请输入"></el-input>
+                            </el-form-item>
+                            <el-form-item label="thumbnail" v-show="false">
+                                <el-input v-model="product.thumbnail" placeholder="请输入"></el-input>
+                            </el-form-item>
+                            <el-form-item label="httpUrl" v-show="false">
+                                <el-input v-model="product.httpUrl" placeholder="请输入"></el-input>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="onSubmit">提交</el-button>
+                                <el-button @click="onSkip">跳过</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </el-col>
+                </el-row>
+            </el-main>
+        </el-container>
+    </div>
+</body>
+    <!-- 先引入 Vue -->
+    <script src="https://cdn.bootcss.com/vue/2.4.4/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="https://cdn.bootcss.com/element-ui/2.0.0-alpha.2/index.js"></script>
+    <script src="/static/js/lib/jquery.min.js"></script>
+    <script src="/static/js/lib/jquery.cookie.min.js"></script>
+    <script>
+        var vm = new Vue({
+            el: '#app',
+            data: {
+                category_options_1: [{
+                    value: "sofa",
+                    label: "沙发"
+                }, {
+                    value: "chair",
+                    label: "椅子"
+                }, {
+                    value: "bench",
+                    label: "凳子"
+                }, {
+                    value: "table",
+                    label: "桌子"
+                }, {
+                    value: "lighting",
+                    label: "灯具"
+                }, {
+                    value: "bed",
+                    label: "床"
+                }, {
+                    value: "accessories",
+                    label: "饰品"
+                }, {
+                    value: "outdoors",
+                    label: "户外家具"
+                }],
+                category_options_2: {
+                    "sofa": [{
+                        value: "sectional-sofa",
+                        label: "组合沙发"
+                    }, {
+                        value: "settee",
+                        label: "多人沙发"
+                    }, {
+                        value: "love-seat",
+                        label: "双人沙发"
+                    }, {
+                        value: "single-sofa",
+                        label: "单人沙发"
+                    }, {
+                        value: "chaise-lounge",
+                        label: "贵妃椅"
+                    }, {
+                        value: "sofa-bed",
+                        label: "沙发床"
+                    }],
+                    "chair": [{
+                        value: "leisure-chair",
+                        label: "休闲椅"
+                    }, {
+                        value: "bar-chair",
+                        label: "吧椅"
+                    }, {
+                        value: "office-chair",
+                        label: "办公椅"
+                    }, {
+                        value: "deck-chair",
+                        label: "躺椅"
+                    }, {
+                        value: "outdoor-chair",
+                        label: "户外椅"
+                    }, {
+                        value: "dining-chair",
+                        label: "dining-chair"
+                    }],
+                    "bench": [{
+                        value: "stool",
+                        label: "凳子"
+                    }, {
+                        value: "round-stool",
+                        label: "圆凳"
+                    }, {
+                        value: "bench",
+                        label: "长凳"
+                    }, {
+                        value: "foot-stool",
+                        label: "踏脚凳"
+                    }],
+                    "table": [{
+                        value: "end-table",
+                        label: "边几"
+                    }, {
+                        value: "cocktail-table",
+                        label: "茶几"
+                    }, {
+                        value: "dining-table",
+                        label: "餐桌"
+                    }, {
+                        value: "tea-table",
+                        label: "茶桌"
+                    }, {
+                        value: "desk",
+                        label: "办公桌"
+                    }, {
+                        value: "writing-desk",
+                        label: "书桌"
+                    }, {
+                        value: "dressing-table",
+                        label: "梳妆台"
+                    }, {
+                        value: "bar-counter",
+                        label: "吧台"
+                    }],
+                    "lighting": [{
+                        value: "droplight",
+                        label: "吊灯"
+                    }, {
+                        value: "wall-lamp",
+                        label: "壁灯"
+                    }, {
+                        value: "crystal-lamp",
+                        label: "水晶灯"
+                    }, {
+                        value: "desk-lamp",
+                        label: "台灯"
+                    }, {
+                        value: "floor-lamp",
+                        label: "落地灯"
+                    }, {
+                        value: "ceiling-lamp",
+                        label: "吸顶灯"
+                    }, {
+                        value: "downlight",
+                        label: "筒灯"
+                    }, {
+                        value: "children-lamp",
+                        label: "儿童灯"
+                    }],
+                    "bed": [{
+                        value: "double-bed",
+                        label: "双人床"
+                    }, {
+                        value: "single-bed",
+                        label: "单人床"
+                    }, {
+                        value: "sofa-bed",
+                        label: "沙发床"
+                    }],
+                    "accessories": [{
+                        value: "ornaments",
+                        label: "摆件"
+                    }, {
+                        value: "wall-paint",
+                        label: "挂画"
+                    }, {
+                        value: "wall-decor",
+                        label: "墙饰"
+                    }, {
+                        value: "decorative-mirror",
+                        label: "装饰镜"
+                    }, {
+                        value: "textiles",
+                        label: "家纺"
+                    }, {
+                        value: "tea-sets",
+                        label: "茶具"
+                    }, {
+                        value: "toy",
+                        label: "玩具"
+                    }, {
+                        value: "sculpture",
+                        label: "雕刻"
+                    }],
+                    "outdoors": [{
+                        value: "outdoors",
+                        label: "户外家具"
+                    }]
+                },
+                room_options: [{
+                    value: "kitchen",
+                    label: "厨房"
+                }, {
+                    value: "bath",
+                    label: "卫浴"
+                }, {
+                    value: "bedroom",
+                    label: "卧室"
+                }, {
+                    value: "living",
+                    label: "客厅"
+                }, {
+                    value: "dining",
+                    label: "餐厅"
+                }, {
+                    value: "outdoor",
+                    label: "户外"
+                }, {
+                    value: "baby&kids",
+                    label: "婴童房"
+                }, {
+                    value: "home-office",
+                    label: "办公室"
+                }, {
+                    value: "storage&closet",
+                    label: "仓库&储物间"
+                }, {
+                    value: "exterior",
+                    label: "外景"
+                }, {
+                    value: "wine-cellar",
+                    label: "酒窖"
+                }, {
+                    value: "entry",
+                    label: "玄关"
+                }, {
+                    value: "hall",
+                    label: "走廊&门厅"
+                }, {
+                    value: "home-bar",
+                    label: "家庭酒吧"
+                }, {
+                    value: "staircase",
+                    label: "楼梯"
+                }, {
+                    value: "basement",
+                    label: "地下室"
+                }, {
+                    value: "garage&shed",
+                    label: "车库&棚屋"
+                }, {
+                    value: "gym",
+                    label: "健身房"
+                }, {
+                    value: "laundry",
+                    label: "洗衣房"
+                }],
+                color_options: [{
+                    value: "black",
+                    label: "黑色"
+                }, {
+                    value: "brown",
+                    label: "棕色"
+                }, {
+                    value: "red",
+                    label: "红色"
+                }, {
+                    value: "orange",
+                    label: "橙色"
+                }, {
+                    value: "yellow",
+                    label: "黄色"
+                }, {
+                    value: "green",
+                    label: "绿色"
+                }, {
+                    value: "blue",
+                    label: "蓝色"
+                }, {
+                    value: "purple",
+                    label: "紫色"
+                }, {
+                    value: "grey",
+                    label: "灰色"
+                }, {
+                    value: "white",
+                    label: "白色"
+                }, {
+                    value: "browns",
+                    label: "褐色"
+                }, {
+                    value: "pink",
+                    label: "粉色"
+                }, {
+                    value: "creme",
+                    label: "米色"
+                }],
+                style_options: [{
+                    value: "contemporary",
+                    label: "现代"
+                }, {
+                    value: "eclectic",
+                    label: "混搭"
+                }, {
+                    value: "modern",
+                    label: "摩登"
+                }, {
+                    value: "traditional",
+                    label: "传统"
+                }, {
+                    value: "chinese-style",
+                    label: "中式"
+                }, {
+                    value: "japanese-style",
+                    label: "日式"
+                }, {
+                    value: "the-orient",
+                    label: "东方"
+                }, {
+                    value: "beach-style",
+                    label: "沙滩风"
+                }, {
+                    value: "industrial",
+                    label: "工业风"
+                }, {
+                    value: "midcentury",
+                    label: "中世纪"
+                }, {
+                    value: "mediterranean",
+                    label: "地中海"
+                }, {
+                    value: "rustic",
+                    label: "乡村风"
+                }, {
+                    value: "scandinavian",
+                    label: "北欧风"
+                }, {
+                    value: "transitional",
+                    label: "过渡风"
+                }, {
+                    value: "tropical",
+                    label: "热带风"
+                }, {
+                    value: "victorian",
+                    label: "维多利亚时代风格"
+                }],
+                material_options: [{
+                    value: "wood",
+                    label: "实木&木"
+                }, {
+                    value: "bamboo-rattan",
+                    label: "竹藤"
+                }, {
+                    value: "wood-based-panel",
+                    label: "木质人造板&木"
+                }, {
+                    value: "metal",
+                    label: "金属"
+                }, {
+                    value: "plastic",
+                    label: "塑料"
+                }, {
+                    value: "glass",
+                    label: "玻璃"
+                }, {
+                    value: "stone",
+                    label: "石材"
+                }, {
+                    value: "soft-material",
+                    label: "软体材料"
+                }, {
+                    value: "fabric",
+                    label: "布艺"
+                }],
+
+                product:{
+                    product_url: "",
+                    sku: "",
+                    group: "",
+                    production_name: "",
+                    category_option_1: "",
+                    category_code: [],
+                    room_code: [],
+                    color_code: [],
+                    style_code: [],
+                    material_code: [],
+                    material: "",
+                    size: "",
+                    sizeName: "",
+                    volume: "",
+                    weight: "",
+                    description: "",
+                    brand_name: "",
+                    thumbnail: "",
+                    httpUrl: "",
+                },
+                Update:"{<{.Update}>}",
+                Taskid:"{<{.Taskid}>}",
+                Num:"{<{.Num}>}",
+            },
+            created: function(){
+                // productStr='{<{.Tocont}>}'
+                productStr='{"product_url": "http://www.arthomefurnishings.com/continental-armoire-weathered-nutmeg", "sku": "237161-2624", "group": "", "production_name": "Continental Armoire - Weathered Nutmeg", "size": "", "sizeName": "", "thumbnail": "Art Classics/237161-2624", "category_option_1": "", "category_code": [], "room_code": [], "color_code": [], "style_code": [], "material_code": [], "brand_name": "Art Classics", "description": "", "material": "", "volume": "", "weight": "", "httpUrl": "http://www.arthomefurnishings.com/continental-armoire-weathered-nutmeg"}'
+
+                this.product = JSON.parse(productStr);
+				//this.product.product_url="https://voice.fanhantech.com/html1/pdf/biesoh3te6phio4P.pdf"
+				//this.brand_name="Global Views"
+            },
+            methods: {
+                onSubmit: function() {
+                    var Taskid = $('#Taskid');
+                    var Num = $('#Num');
+                    var that = this
+                    var obj = {};
+                    obj.Taskid = this.Taskid;
+                    obj.Num = this.Num;
+                    obj.Update = this.Update;
+                    obj.Tocont = JSON.stringify(this.product);
+                    console.log(JSON.stringify(this.product));
+                    $.ajax({        // JQuery提供的ajax 没有使用axios
+                        url: '/t/html1/', 
+                        type: 'POST',
+                        dataType: 'json',
+                        data: obj,
+                        success: function(data){
+                            console.log("data", data )
+                            if(typeof data == 'string' && data === "ok"){
+                                window.location.href = '/t/html1/';
+                            } else {
+                                alert('内部错误',data)
+                                return false;
+                            }
+                        }
+                    });
+                },
+                onSkip: function() {
+                    alert('暂不支持跳过 (如果需要该功能可以开启)')
+                }
+            }
+        })
+    </script>
+</html>
+
