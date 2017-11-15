@@ -38,7 +38,7 @@ class Product():
             print(u'文件夹已存在：', self.brand_name)
 
         # 代理
-        self.proxyOn = False
+        self.proxyOn = True
         self.proxy = ""
         if self.proxyOn:
             self.proxy = self.get_proxy()
@@ -144,18 +144,10 @@ class Product():
     def download_img(self):
         print(u"下载所有product图片")
         num = 1
-        products = []
+        max = self.product_collection.count()
         for product in self.product_collection.find():
             product_tag = json.loads(product["product_tag"])
-            # 去重用
-            if product_tag["product_url"] in products:
-                continue
-            products.append(product_tag["product_url"])
-            print(u"开始处理商品：", product_tag["product_url"], "(" + str(num) + "/" + str(2395) + ")")
-            if num < 939:
-                print(u"跳过")
-                num += 1
-                continue
+            print(u"开始处理商品：", product_tag["product_url"], "(" + str(num) + "/" + str(max) + ")")
             # 图片存储路径
             thumbnail = product_tag["thumbnail"]
             img_urls = product["product_img_urls"]
@@ -411,9 +403,9 @@ if __name__ == "__main__":
     # 导出数据库信息
     #product.export_db_brand_collection()
     #product.export_db_product_collection()
-    product.export_product_url()
-    product.export_product_tag()
-    product.dump_product_db()
+    #product.export_product_url()
+    #product.export_product_tag()
+    #product.dump_product_db()
 
     # 下载图片
-    #product.download_img()
+    product.download_img()
