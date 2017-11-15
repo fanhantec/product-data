@@ -20,12 +20,11 @@ class Product():
         # 连接MongoDB
         client = MongoClient()
         # 选择数据库
-        db = client["product"]
+        db = client["product-db"]
         # 存储一个brand下所有product的url
-        self.brand_collection = db["brand"]
-        
+        self.brand_collection =db["brand-"+self.brand_alia]        
         # 选择集合
-        self.product_collection = db[self.brand_alia]
+        self.product_collection = db["product-"+self.brand_alia]
         self.product_name = ''
         self.product_url = ''
         self.product_tag = ''
@@ -71,19 +70,62 @@ class Product():
     def clear_db(self):
         self.clear_db_brand()
         self.clear_db_product()
+
+    def dump_product_db(self):
+        print(u"备份数据库: brand_collection 和 product_collection")
+        # 导出brand_collection
+        dump_cmd = "mongodump -h 127.0.0.1:27017 -d product-db -c brand-" + product.brand_alia
+        os.system(dump_cmd)
+        # 导出product_collection
+        dump_cmd = "mongodump -h 127.0.0.1:27017 -d product-db -c product-" + product.brand_alia
+        os.system(dump_cmd)
+        print(u"备份数据库成功")
     
-    def export_db_brand(self):
+    def restore_product_db(self):
+        print(u"恢复数据库: brand_collection 和 product_collection")
+        # 导出brand_collection
+        restore_cmd = "mongorestore -h 127.0.0.1:27017 -d product-db -c brand-" + product.brand_alia
+        os.system(dump_cmd)
+        # 导出product_collection
+        dump_cmd = "mongodump -h 127.0.0.1:27017 -d product-db -c product-" + product.brand_alia
+        os.system(dump_cmd)
+        print(u"恢复数据库成功")
+    
+    def export_db_brand_collection(self):
+        print(u"导出db: brand_collection")
+        brand_products = self.brand_collection.find_one({"brand_alia": self.brand_alia})
+        output = ""
+        if brand_products:
+            output = str(brand_products)
+        with open("output." + self.brand_alia + ".brand.collection.txt", "w") as f:
+            f.write(output)
+        print(u"导出完成")
+    
+    def export_db_product_collection(self):
+        print(u"导出db: product_collection")
+        output = ""
+        for product in self.product_collection.find():
+            product_tag = product["product_tag"]
+            output += product_tag + "\n"          
+        output = output[:-1]
+        with open("output." + self.brand_alia + ".product.collection.txt", "w") as f:
+            f.write(output)
+        print(u"导出完成")
+    
+    def export_product_url(self):
         print(u"导出所有商品URL信息")
         brand_products = self.brand_collection.find_one({"brand_alia": self.brand_alia})
         output = ""
         if brand_products:
-            for url in brand_products["brand_product_urls"]:
-                product_tag = {"product_url": url, "brand_name": self.brand_name, "httpUrl": url}
-                output += json.dumps(product_tag) + "\n"
-        with open("output." + self.brand_alia + ".brand.txt", "w") as f:
+            print(u"一共URL条数：", len(brand_products["brand_product_urls"]))
+            for product_url in brand_products["brand_product_urls"]:
+                output += product_url + "\n"
+            output = output[:-1]
+        with open("output." + self.brand_alia + ".product.url.txt", "w") as f:
             f.write(output)
+        print(u"导出完成")
     
-    def export_db_product(self):
+    def export_product_tag(self):
         print(u"导出所有product信息")
         output = ""
         products = []
@@ -96,7 +138,7 @@ class Product():
             
         print(len(products))
         print(len(list(set(products))))
-        with open("output." + self.brand_alia + ".product.txt", "w") as f:
+        with open("output." + self.brand_alia + ".product.tag.txt", "w") as f:
             f.write(output)
     
     def download_img(self):
@@ -180,18 +222,11 @@ class Product():
         # 分析产品的img信息并保存
         self.product_img_urls = self.get_product_img_urls(product_html)
         #print(u"保存商品图片")
-        # 创建图片存储目录
-        try:
-            os.makedirs(product_img_path)
-            print(u'创建图片存储目录：', product_img_path)
-        except OSError:
-            print(u'图片存储目录已存在：', product_img_path)
-        # 保存图片
+
         print(u"一共图片数目：", len(self.product_img_urls))
         for img_url in self.product_img_urls:
-            img_name = self.get_img_name(img_url)
-            #self.save_img(img_url, img_name, product_img_path)
-        print(u"图片下载成功")
+            print(img_url)
+        print(u"图片URL获取成功")
 
         # 保存数据库
         self.save_db()
@@ -201,21 +236,15 @@ class Product():
         product_tag = {}
 
         # production_name
-        production_name = product_html.find("h3", class_="product-title").get_text().strip()
+        production_name = product_html.find("span", class_="ProductNameText").get_text().strip()
         print("production_name:", production_name)
-        # sku & size & description
-        div_tag = product_html.find("div", id="product")
-        li_tags = div_tag.find_all("li")
         # sku
-        sku = li_tags[0].find("span").get_text().strip()
+        sku = production_name
         print("sku:", sku)
         # size
-        size = li_tags[2].find("span").get_text().strip()
-        print("size:", size)
+        size = ""
         # description
-        description = li_tags[3].find_all("p")[1].get_text().strip()
-        print("description:", description)       
-
+        description = ""
         group = ""
         thumbnail = self.brand_name + "/" + sku
         sizeName = ""
@@ -263,9 +292,15 @@ class Product():
     # 从product_html中获取product_img_urls
     def get_product_img_urls(self, product_html):
         img_urls = []
-        tag_li = product_html.find("ul", id="productGallery").find_all("li")
-        for li in tag_li:
-            img_url = li.find("a").get("data-image")
+        if product_html.find("div", class_="galleryIcons"):
+            tags_a = product_html.find("div", class_="galleryIcons").find_all("a", rel=True)
+            for a in tags_a:
+                rel = ''.join(a.get("rel")).split(",")[1]
+                img_url = self.base_url + rel.strip().split("'")[1][1:]
+                img_urls.append(img_url)
+        else:
+            img_src = product_html.find("div", class_="ProductDiv").find("img").get("src")
+            img_url = self.base_url + img_src
             img_urls.append(img_url)
         return img_urls
 
@@ -288,62 +323,50 @@ class Product():
         print(u"开始获取所有产品的URL...")
         product_urls = []
 
-        html = BeautifulSoup(html, "lxml")
+        #html = BeautifulSoup(html, "lxml")
         # 先处理类别
-        categories = [["decor", "https://zuomod.com/decor"],
-                      ["indoor", "https://zuomod.com/indoor"],                      
-                      ["outdoor", "https://zuomod.com/outdoor"],
-                      ["zuo-lighting", "https://zuomod.com/zuo-lighting"]]     
+        page_urls = [
+            "http://www.coasttocoastaccents.com/c-145-accents-by-andy-stein.aspx?pagesize=96",
+            "http://www.coasttocoastaccents.com/c-132-coast-to-coast-accents.aspx?pagesize=96",
+            "http://www.coasttocoastaccents.com/c-132-coast-to-coast-accents.aspx?pagesize=96&pagenum=2",
+            "http://www.coasttocoastaccents.com/c-132-coast-to-coast-accents.aspx?pagesize=96&pagenum=3",
+            "http://www.coasttocoastaccents.com/c-132-coast-to-coast-accents.aspx?pagesize=96&pagenum=4",
+            "http://www.coasttocoastaccents.com/c-150-jadu-accents.aspx?pagesize=96",
+            "http://www.coasttocoastaccents.com/c-150-jadu-accents.aspx?pagesize=96&pagenum=2",
+            "http://www.coasttocoastaccents.com/c-167-pieces-in-paradise.aspx?pagesize=96"
+        ]
         brand_products = self.brand_collection.find_one({"brand_alia": self.brand_alia})
-        last_flag = False
-        last_category = None
-        last_page = None
+        last_page = 0
         # 获取数据库中的记录，用于跳过
         if brand_products:
             product_urls = brand_products["brand_product_urls"]
-            last_category = brand_products["last_category"]
             last_page = brand_products["last_page"]
-            last_flag = True
-        for categorie in categories:            
-            categorie_url = categorie[1]
-            categorie_name = categorie[0]                         
-            print(u"处理类别：" ,categorie_name, categorie_url)
-
-            if last_flag:
-                if categorie_name != last_category:
-                    print(u"该分类处理完，跳过")
+    
+        # 分页处理
+        max_page = len(page_urls)
+        print(u"总页数：", max_page)
+        page = 0
+        for page_url in page_urls:
+            page += 1
+            print(u"分页URL:", page_url, "("+str(page)+"/"+str(max_page)+")")
+            if page < last_page:
+                print(u"该页处理完，跳过")
+                continue
+            if self.proxyOn and page%5==0:
+                self.proxy = self.get_proxy()            
+            page_html = self.request(page_url).text
+            page_html = BeautifulSoup(page_html, "lxml")
+            tag_div = page_html.find_all("div", class_="prodName")
+            for div in tag_div:
+                product_url = self.base_url+div.find("a").get("href")
+                print(u"产品URL：", product_url)
+                if product_url in product_urls:
+                    print(u"重复产品URL，跳过")
                     continue
-                else:
-                    last_flag = False
-            
-            # 页面处理
-            categorie_html = self.request(categorie_url).text
-            categorie_html = BeautifulSoup(categorie_html, "lxml")
-            # 分页处理
-            page_info = categorie_html.find("div", class_="col-sm-6 text-right").get_text().strip()
-            print(u"分页信息：", page_info)
-            max_page = page_info.split('(')[1].split(' ')[0]
-            print(u"总页数：", max_page)
-            for page in range(1, int(max_page)+1):
-                page_url = categorie_url + "?page=" + str(page)
-                print(u"分页URL:", page_url, "(", str(page) + "/" + max_page + ")")
-
-                if categorie_name == last_category and page < last_page:
-                    print(u"该页处理完，跳过")
-                    continue
-                if self.proxyOn and page%5==0:
-                    self.proxy = self.get_proxy()
-                page_html = self.request(page_url).text
-                page_html = BeautifulSoup(page_html, "lxml")
-                tag_div = page_html.find_all("div", class_="product-thumb transition ")
-                for div in tag_div:
-                    product_url = div.find("div", class_="name").find("a").get("href")
-                    print(u"产品URL：", product_url)
-                    if product_url not in product_urls:
-                        product_urls.append(product_url)
-                self.brand_collection.remove({"brand_alia": self.brand_alia})
-                self.brand_collection.save({"brand_alia": self.brand_alia, "flag": False, "brand_product_urls": product_urls, "last_category": categorie_name, "last_page": page, "created_time": datetime.datetime.now()})
-                print(u"保存分页数据")
+                product_urls.append(product_url)
+            self.brand_collection.remove({"brand_alia": self.brand_alia})
+            self.brand_collection.save({"brand_alia": self.brand_alia, "flag": False, "brand_product_urls": product_urls, "last_page": page, "created_time": datetime.datetime.now()})
+            print(u"保存分页数据")
         print(u"获取所有产品的URL成功")
         return product_urls
 
@@ -352,25 +375,23 @@ class Product():
         product_urls = []
         # 先从数据库中查找是否已经获取到了所有product的url
         brand_products = self.brand_collection.find_one({"brand_alia": self.brand_alia})
-        if brand_products:
+        if brand_products and brand_products["flag"]:
             print(u"数据库中存在所有产品的URL，直接获取")
             product_urls = brand_products["brand_product_urls"]
         else:
             print(u"解析网站信息")
-            html = self.request(self.base_url).text
+            html = ""#self.request(self.base_url).text
             product_urls = self.get_product_urls(html)
+            self.brand_collection.remove({"brand_alia": self.brand_alia})
             self.brand_collection.save({"brand_alia": self.brand_alia, "flag": True, "brand_product_urls": product_urls, "created_time": datetime.datetime.now()})
             print(u"所有产品的URL入库成功")
-
+        #return
         num = 1
         for product_url in product_urls:
             # 从数据库中查找是否商品信息已获取
             if self.product_collection.find_one({"product_url": product_url}):
                 print(u"商品信息已入库，跳过：", product_url)
             else:
-                if num >= 2400:
-                    print(u"1-600已经完成")
-                    break
                 print("(" + str(num) + "/" + str(len(product_urls)) + ")", sep="")
                 if self.proxyOn and num%2==0:
                     self.proxy = self.get_proxy()
@@ -388,8 +409,11 @@ if __name__ == "__main__":
     #product.clear_db_product()
 
     # 导出数据库信息
-    #product.export_db_brand()
-    #product.export_db_product()
+    #product.export_db_brand_collection()
+    #product.export_db_product_collection()
+    product.export_product_url()
+    product.export_product_tag()
+    product.dump_product_db()
 
     # 下载图片
-    product.download_img()
+    #product.download_img()

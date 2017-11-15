@@ -1,0 +1,1 @@
+mongod --dbpath=/home/ubuntu/workspace/data/db --logpath=/home/ubuntu/workspace/data/log/mongo.log --logappend --rest &
