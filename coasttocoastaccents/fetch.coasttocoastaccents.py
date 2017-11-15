@@ -84,11 +84,8 @@ class Product():
     def restore_product_db(self):
         print(u"恢复数据库: brand_collection 和 product_collection")
         # 导出brand_collection
-        restore_cmd = "mongorestore -h 127.0.0.1:27017 -d product-db -c brand-" + product.brand_alia
-        os.system(dump_cmd)
-        # 导出product_collection
-        dump_cmd = "mongodump -h 127.0.0.1:27017 -d product-db -c product-" + product.brand_alia
-        os.system(dump_cmd)
+        restore_cmd = "mongorestore -h 127.0.0.1:27017 -d product-db dump/product-db/"
+        os.system(restore_cmd)
         print(u"恢复数据库成功")
     
     def export_db_brand_collection(self):
@@ -121,7 +118,7 @@ class Product():
             for product_url in brand_products["brand_product_urls"]:
                 output += product_url + "\n"
             output = output[:-1]
-        with open("output." + self.brand_alia + ".product.url.txt", "w") as f:
+        with open("output." + self.brand_alia + ".product.url", "w") as f:
             f.write(output)
         print(u"导出完成")
     
@@ -129,16 +126,16 @@ class Product():
         print(u"导出所有product信息")
         output = ""
         products = []
+        print(u"一共商品条数：", self.product_collection.count())
         for product in self.product_collection.find():
             product_tag = json.loads(product["product_tag"])
-            if product_tag["product_url"] in products:
-                continue
             products.append(product_tag["product_url"])
-            output += product["product_tag"] + "\n"          
-            
-        print(len(products))
-        print(len(list(set(products))))
-        with open("output." + self.brand_alia + ".product.tag.txt", "w") as f:
+            output += product["product_tag"] + "\n"
+        
+        output = output[:-1]
+        if len(products) > len(list(set(products))):
+            print(u"有重复数据")        
+        with open("output." + self.brand_alia + ".product.tag", "w") as f:
             f.write(output)
     
     def download_img(self):
@@ -400,12 +397,15 @@ if __name__ == "__main__":
     #product.clear_db_brand()
     #product.clear_db_product()
 
+    # 恢复数据库信息
+    #product.restore_product_db()
+
     # 导出数据库信息
     #product.export_db_brand_collection()
     #product.export_db_product_collection()
-    #product.export_product_url()
-    #product.export_product_tag()
+    product.export_product_url()
+    product.export_product_tag()
     #product.dump_product_db()
 
     # 下载图片
-    product.download_img()
+    #product.download_img()
